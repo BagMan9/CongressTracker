@@ -70,7 +70,6 @@ def scrapeHouse():
             member_data["Document"] = member["DocID"]
             member_data["FilingDate"] = member["FilingDate"]
             PreDownReps.append(member_data)
-            print(member["FilingType"])
     PreDownReps = json.dumps(PreDownReps)
     os.remove("FilteredXML.xml")
     return PreDownReps

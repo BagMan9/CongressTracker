@@ -1,35 +1,31 @@
 from SenatePreD import scrapeSenate
 from HousePreD import scrapeHouse
 from DataGet import houseDataDownload, senateDataDownload
+from validation import isDownloaded
 import json
 from operator import itemgetter
 import os
 
 
 def recordParse(data):
-    if data["Role"] == "H":
-        location = "HouseReps"
-        filetype = "pdf"
-        downloaded = False
-        pathstring = f'./{location}/{data["Name"]}/TO-PARSE/{data["Document"]}-{data["FilingDate"]}.{filetype}'  # noqa: E501
-        if not os.path.exists(pathstring):
+    downloaded = isDownloaded(data)
+    if not downloaded:
+        if data["Role"] == "H":
+            location = "HouseReps"
+            filetype = "pdf"
+            pathstring = f'./{location}/{data["Name"]}/TO-PARSE/{data["Document"]}-{data["FilingDate"]}.{filetype}'  # noqa: E501
             recordData = houseDataDownload(
                 data["Document"], data["FilingDate"][:4]
             )
-            downloaded = True
-    if data["Role"] == "S":
-        location = "SenateReps"
-        filetype = "html"
-        downloaded = False
-        pathstring = f'./{location}/{data["Name"]}/TO-PARSE/{data["Document"]}-{data["FilingDate"]}.{filetype}'  # noqa: E501
-        if not os.path.exists(pathstring):
+        if data["Role"] == "S":
+            location = "SenateReps"
+            filetype = "html"
+            pathstring = f'./{location}/{data["Name"]}/TO-PARSE/{data["Document"]}-{data["FilingDate"]}.{filetype}'  # noqa: E501
             recordData = senateDataDownload(data["Document"])
-            downloaded = True
 
-    if not os.path.exists(f"./{location}/{data['Name']}"):
-        os.makedirs(f'./{location}/{data["Name"]}')
-        os.makedirs(f'./{location}/{data["Name"]}/TO-PARSE')
-    if downloaded:
+        if not os.path.exists(f"./{location}/{data['Name']}"):
+            os.makedirs(f'./{location}/{data["Name"]}')
+            os.makedirs(f'./{location}/{data["Name"]}/TO-PARSE')
         with open(
             pathstring,
             "wb",
