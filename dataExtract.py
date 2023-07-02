@@ -5,12 +5,12 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 import datetime
 import json
+import pdfplumber
 
 
-def extractTransactions():
+def extractSenate():
     Extracted_Records = []
     test_list = []
-    houseRecords = glob.iglob("./HouseReps/*/TO-PARSE/*")
     senateRecords = glob.iglob("./SenateReps/*/TO-PARSE/*")
     for record in senateRecords:
         if os.path.basename(record).startswith("_ptr_"):
@@ -23,6 +23,9 @@ def extractTransactions():
                     transaction_Data["Name"] = os.path.basename(
                         Path(record).parents[1]
                     )
+                    transaction_Data["Filing Date"] = os.path.basename(record)[
+                        -15:-5
+                    ]
                     for child in item.children:
                         formatted = re.sub(
                             "(?s)\\s(?!\\w)|<.*?>|<a.*?>",
@@ -55,10 +58,84 @@ def extractTransactions():
                             transaction_Data["Amount"] = formatted
                         index += 0.5
                     Extracted_Records.append(transaction_Data)
+    Extracted_Records = json.loads(json.dumps(Extracted_Records))
+    return Extracted_Records
+
+
+def extractHouse():
+    houseRecords = glob.iglob("./HouseReps/*/TO-PARSE/*")
+
+    Extracted_Records = []
     for record in houseRecords:
-        pass
-    Raw_Extracted_Records = json.loads(json.dumps(Extracted_Records))
+        print(record)
+        with pdfplumber.open(record) as pdf:
+            pg_num = 0
+            for page in pdf.pages:
+                tables = page.extract_tables()
+                for table in tables:
+                    ID = 0
+                    for item in table:
+                        transaction_Data = {}
+                        transaction_Data["Name"] = os.path.basename(
+                            Path(record).parents[1]
+                        )
+                        transaction_Data["Filing Date"] = os.path.basename(
+                            record
+                        )[-15:-5]
+                        transaction_Data["ID"] = (
+                            f"{pg_num}-{ID}-{os.path.basename(record)}"
+                        )
+                        ID += 1
+                        print(transaction_Data["ID"])
+                        parseTable(item, transaction_Data["ID"])
+
+                pg_num += 1
+
+
+def parseTable(item, ID):
+    ID = str(ID)
+    pg = int(re.search(r"(?<!.)\d{1,2}", ID).group())
+    row = int(re.search(r"(?<=-)\d{1,2}(?!-\d{2}\.pdf|\.pdf|\d)", ID).group())
+    ownerDict = {
+        "SP": "Spouse",
+        "JT": "Joint",
+        "DC": "Child",
+    }
+    if item[0] != "ID":
+        if item[1] is None:
+            cell = str(item[0])
+            cell = cell.replace("\n", "").replace("\x00", "")
+            cell = re.split(r"(?<!T)F S", cell)
+            cell = cell[0]
+            print(cell)
+            try:
+                if re.search(r"(?<=\[).*(?=\])", item[0]).group() != "ST":
+                    return False
+            except AttributeError:
+                return False
+            if len(cell) <= 50:  # Bandaid, fix later
+                if pg > 0 and row == 1:
+                    print("Expected Error")
+                    print(item)
+                    return False
+                else:
+                    print("Unexpected Error")
+                    exit(1)
+            owner = ownerDict.get(cell[:2], "Self")
+            date = datetime.datetime.strptime(
+                re.search(r"\d{2}/\d{2}/\d{4}", cell).group(), "%m/%d/%Y"
+            ).date()
+            date = date.isoformat()
+            ticker = re.search(r"(?<=\().{1,6}(?=\))", cell).group()
+            print("Date: ", date)
+            print("Owner: ", owner)
+            print("Ticker: ", ticker)
+            print("Security Type: Stock")
+            print("Amount: ", re.search(r"\$.*(?= -)", cell).group())
+        else:
+            for cell in item:
+                pass
 
 
 if __name__ == "__main__":
-    extractTransactions()
+    extractHouse()

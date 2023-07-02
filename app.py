@@ -13,19 +13,18 @@ def recordParse(data):
         if data["Role"] == "H":
             location = "HouseReps"
             filetype = "pdf"
-            pathstring = f'./{location}/{data["Name"]}/TO-PARSE/{data["Document"]}-{data["FilingDate"]}.{filetype}'  # noqa: E501
             recordData = houseDataDownload(
                 data["Document"], data["FilingDate"][:4]
             )
         if data["Role"] == "S":
             location = "SenateReps"
             filetype = "html"
-            pathstring = f'./{location}/{data["Name"]}/TO-PARSE/{data["Document"]}-{data["FilingDate"]}.{filetype}'  # noqa: E501
             recordData = senateDataDownload(data["Document"])
 
         if not os.path.exists(f"./{location}/{data['Name']}"):
             os.makedirs(f'./{location}/{data["Name"]}')
             os.makedirs(f'./{location}/{data["Name"]}/TO-PARSE')
+        pathstring = f'./{location}/{data["Name"]}/TO-PARSE/{data["Document"]}-{data["FilingDate"]}.{filetype}'  # noqa: E501
         with open(
             pathstring,
             "wb",
