@@ -81,7 +81,7 @@ def extractHouse():
                         )
                         transaction_Data["Filing Date"] = os.path.basename(
                             record
-                        )[-14:-5]
+                        )[-14:-4]
                         transaction_Data["ID"] = (
                             f"{pg_num}-{ID}-{os.path.basename(record)[:-4]}"
                         )

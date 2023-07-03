@@ -1,7 +1,8 @@
 from SenatePreD import scrapeSenate
 from HousePreD import scrapeHouse
 from DataGet import houseDataDownload, senateDataDownload
-from validation import isDownloaded
+from dataExtract import extractHouse, extractSenate
+from validation import isDownloaded, dataCheck, updateMerge
 import json
 from operator import itemgetter
 import os
@@ -32,30 +33,23 @@ def recordParse(data):
             output.write(recordData)
 
 
-Record_Map = open("./DataWork/Record_Map.json", "r+")
-
-
 merge = json.loads(scrapeSenate()) + json.loads(scrapeHouse())
+Record_JSON = updateMerge("./DataWork/Record_Map.json", merge, "FilingDate")
 
 
-if not os.path.exists("./DataWork/Record_Map.json"):
-    with Record_Map as output:
-        output.write(json.dumps(merge))
+for record in Record_JSON:
+    recordParse(record)
 
-Record_Map = json.loads(Record_Map.read())
+new_raw_transactions = extractSenate() + extractHouse()
 
-New_Record_Map = merge + Record_Map
-
-New_Record_Map = [
-    dict(t) for t in set(tuple(d.items()) for d in New_Record_Map)
-]
-
-New_Record_Map = sorted(
-    New_Record_Map, key=itemgetter("FilingDate"), reverse=True
+raw_transactions = updateMerge(
+    "./DataWork/Transactions.json", new_raw_transactions, "Date"
 )
 
-with open("./DataWork/Record_Map.json", "w") as output:
-    output.write(json.dumps(New_Record_Map, indent=4))
+new_to_fix = []
+for entry in new_raw_transactions:
+    if not dataCheck(entry):
+        new_to_fix.append(entry)
 
-for record in New_Record_Map:
-    recordParse(record)
+
+to_fix = updateMerge("./DataWork/to_fix.json", new_to_fix, "Filing Date")
