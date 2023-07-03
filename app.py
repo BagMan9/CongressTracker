@@ -2,9 +2,9 @@ from SenatePreD import scrapeSenate
 from HousePreD import scrapeHouse
 from DataGet import houseDataDownload, senateDataDownload
 from dataExtract import extractHouse, extractSenate
-from validation import isDownloaded, dataCheck, updateMerge
+from validation import isDownloaded, dataCheck, updateMerge, updateParsed
+from sqldata import addToDB
 import json
-from operator import itemgetter
 import os
 
 
@@ -33,6 +33,10 @@ def recordParse(data):
             output.write(recordData)
 
 
+if os.path.exists("./DataWork/Record_Map.json"):
+    updateParsed()
+
+
 merge = json.loads(scrapeSenate()) + json.loads(scrapeHouse())
 Record_JSON = updateMerge("./DataWork/Record_Map.json", merge, "FilingDate")
 
@@ -45,7 +49,9 @@ new_raw_transactions = extractSenate() + extractHouse()
 raw_transactions = updateMerge(
     "./DataWork/Transactions.json", new_raw_transactions, "Date"
 )
-
+raw_transactions = [item for item in raw_transactions if dataCheck(item)]
+with open("./DataWork/Transactions.json", "w") as output:
+    output.write(json.dumps(raw_transactions, indent=4))
 new_to_fix = []
 for entry in new_raw_transactions:
     if not dataCheck(entry):
@@ -53,3 +59,5 @@ for entry in new_raw_transactions:
 
 
 to_fix = updateMerge("./DataWork/to_fix.json", new_to_fix, "Filing Date")
+
+addToDB("./DataWork/Transactions.json")
