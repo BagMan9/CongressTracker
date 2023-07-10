@@ -33,10 +33,6 @@ def recordParse(data):
             output.write(recordData)
 
 
-if os.path.exists("./DataWork/Record_Map.json"):
-    updateParsed()
-
-
 merge = json.loads(scrapeSenate()) + json.loads(scrapeHouse())
 Record_JSON = updateMerge("./DataWork/Record_Map.json", merge, "FilingDate")
 
@@ -61,3 +57,5 @@ for entry in new_raw_transactions:
 to_fix = updateMerge("./DataWork/to_fix.json", new_to_fix, "Filing Date")
 
 addToDB("./DataWork/Transactions.json")
+
+updateParsed()
