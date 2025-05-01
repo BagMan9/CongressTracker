@@ -14,24 +14,25 @@ def recordParse(data):
         if data["Role"] == "H":
             location = "HouseReps"
             filetype = "pdf"
-            recordData = houseDataDownload(
-                data["Document"], data["FilingDate"][:4]
-            )
+            recordData = houseDataDownload(data["Document"], data["FilingDate"][:4])
         if data["Role"] == "S":
             location = "SenateReps"
             filetype = "html"
             recordData = senateDataDownload(data["Document"])
 
         if not os.path.exists(f"./{location}/{data['Name']}"):
-            os.makedirs(f'./{location}/{data["Name"]}')
-            os.makedirs(f'./{location}/{data["Name"]}/TO-PARSE')
-        pathstring = f'./{location}/{data["Name"]}/TO-PARSE/{data["Document"]}-{data["FilingDate"]}.{filetype}'  # noqa: E501
+            os.makedirs(f"./{location}/{data['Name']}")
+            os.makedirs(f"./{location}/{data['Name']}/TO-PARSE")
+        pathstring = f"./{location}/{data['Name']}/TO-PARSE/{data['Document']}-{data['FilingDate']}.{filetype}"  # noqa: E501
         with open(
             pathstring,
             "wb",
         ) as output:
             output.write(recordData)
 
+
+if not os.path.exists("./DataWork/"):
+    os.makedirs("./DataWork/")
 
 merge = json.loads(scrapeSenate()) + json.loads(scrapeHouse())
 Record_JSON = updateMerge("./DataWork/Record_Map.json", merge, "FilingDate")
